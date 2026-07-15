@@ -80,15 +80,15 @@ export const AnalyticsTab: React.FC = () => {
   // Custom SVG line chart coordinates for Rating Progress
   const ratingLineChart = useMemo(() => {
     const r = filteredData.ratings;
-    if (r.length === 0) return { points: [], pathD: '', areaD: '', width: 500, height: 180, firstRating: 800, currentRating: 800 };
+    if (r.length === 0) return { points: [], pathD: '', areaD: '', width: 500, height: 180, firstRating: 0, currentRating: 0 };
     
     const width = 500;
     const height = 180;
     const padding = 20;
 
     const elos = r.map(x => x.newRating);
-    const minElo = Math.min(...elos, 800) - 50;
-    const maxElo = Math.max(...elos, 800) + 50;
+    const minElo = Math.min(...elos, 0) - 50;
+    const maxElo = Math.max(...elos, 0) + 50;
     const eloRange = maxElo - minElo || 100;
 
     const points = r.map((entry, index) => {
@@ -106,7 +106,7 @@ export const AnalyticsTab: React.FC = () => {
       ? `${pathD} L ${points[points.length - 1].x} ${height - padding} L ${points[0].x} ${height - padding} Z`
       : '';
 
-    return { points, pathD, areaD, width, height, firstRating: elos[0] || 800, currentRating: elos[elos.length - 1] || 800 };
+    return { points, pathD, areaD, width, height, firstRating: elos[0] || 0, currentRating: elos[elos.length - 1] || 0 };
   }, [filteredData]);
 
   // Custom SVG Bar Chart for Games Played Over Time (Daily/Weekly grouping)

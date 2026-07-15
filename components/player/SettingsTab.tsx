@@ -143,10 +143,10 @@ export const SettingsTab: React.FC = () => {
     await db.openingStats.clear();
     await db.pieceStats.clear();
     
-    // Reset player rating to 800
+    // Reset player rating to 0
     await updateProfile({
-      rating: 800,
-      highestRating: 800,
+      rating: 0,
+      highestRating: 0,
       winStreak: 0,
       longestStreak: 0,
       totalPlayTime: 0
@@ -398,7 +398,7 @@ export const SettingsTab: React.FC = () => {
           <div className="p-4 rounded-xl bg-red-500/5 border border-red-500/10 flex items-center justify-between">
             <div>
               <p className="font-semibold text-red-400">Clear Game Statistics</p>
-              <p className="text-[10px] text-gray-400">Deletes match logs and resets Elo levels to 800.</p>
+              <p className="text-[10px] text-gray-400">Deletes match logs and resets Elo levels to 0.</p>
             </div>
             <button
               onClick={() => setConfirmModal('reset_games')}
@@ -450,7 +450,7 @@ export const SettingsTab: React.FC = () => {
 
               <p className="text-xs text-gray-300 leading-relaxed">
                 {confirmModal === 'reset_games' 
-                  ? 'This will permanently delete all completed matches, rating histories, opening statistics, and calendar achievements progress. Your rating will reset to 800 Elo. This cannot be undone.'
+                  ? 'This will permanently delete all completed matches, rating histories, opening statistics, and calendar achievements progress. Your rating will reset to 0 Elo. This cannot be undone.'
                   : 'This will wipe the entire ChessMaster IndexedDB database. All games, settings preferences, and earned badges achievements will be deleted. This cannot be undone.'}
               </p>
 

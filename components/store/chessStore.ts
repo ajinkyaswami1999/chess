@@ -281,7 +281,7 @@ async function saveCompletedGame(
     const K = 32;
     const expectedScore = 1 / (1 + Math.pow(10, (opponentRating - playerProfile.rating) / 400));
     const change = Math.round(K * (score - expectedScore));
-    const newRating = Math.max(100, playerProfile.rating + change);
+    const newRating = Math.max(0, playerProfile.rating + change);
     const newHighestRating = Math.max(playerProfile.highestRating, newRating);
 
     // Dynamic Chess Game Accuracy approximation (based on mistakes/blunders/moves)

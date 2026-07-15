@@ -52,8 +52,8 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
           avatar: '👑', // Default royal crown avatar
           level: 1,
           xp: 0,
-          rating: 800, // starting FIDE Elo
-          highestRating: 800,
+          rating: 0, // starting FIDE Elo
+          highestRating: 0,
           winStreak: 0,
           longestStreak: 0,
           totalPlayTime: 0,
@@ -96,8 +96,8 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
           { id: 'ach-4', key: 'games_50', title: 'Veteran', description: 'Play 50 total games.', category: 'games', progress: 0, target: 50, unlocked: 0, xpReward: 500, createdAt: Date.now() },
           { id: 'ach-5', key: 'wins_10', title: 'Dominant Force', description: 'Win 10 games.', category: 'wins', progress: 0, target: 10, unlocked: 0, xpReward: 300, createdAt: Date.now() },
           { id: 'ach-6', key: 'wins_50', title: 'Grandmaster', description: 'Win 50 games.', category: 'wins', progress: 0, target: 50, unlocked: 0, xpReward: 1000, createdAt: Date.now() },
-          { id: 'ach-7', key: 'rating_1000', title: 'Four Digits', description: 'Reach 1000 Elo rating.', category: 'rating', progress: 800, target: 1000, unlocked: 0, xpReward: 200, createdAt: Date.now() },
-          { id: 'ach-8', key: 'rating_1500', title: 'Master Mind', description: 'Reach 1500 Elo rating.', category: 'rating', progress: 800, target: 1500, unlocked: 0, xpReward: 500, createdAt: Date.now() },
+          { id: 'ach-7', key: 'rating_1000', title: 'Four Digits', description: 'Reach 1000 Elo rating.', category: 'rating', progress: 0, target: 1000, unlocked: 0, xpReward: 200, createdAt: Date.now() },
+          { id: 'ach-8', key: 'rating_1500', title: 'Master Mind', description: 'Reach 1500 Elo rating.', category: 'rating', progress: 0, target: 1500, unlocked: 0, xpReward: 500, createdAt: Date.now() },
           { id: 'ach-9', key: 'streak_5', title: 'On Fire', description: 'Achieve a 5-game winning streak.', category: 'streaks', progress: 0, target: 5, unlocked: 0, xpReward: 250, createdAt: Date.now() },
           { id: 'ach-10', key: 'beat_advanced', title: 'Giant Slayer', description: 'Defeat the Advanced AI (Level 4).', category: 'special', progress: 0, target: 1, unlocked: 0, xpReward: 400, createdAt: Date.now() },
           { id: 'ach-11', key: 'beat_expert', title: 'Deep Blue Who?', description: 'Defeat the Expert Stockfish AI (Level 5).', category: 'special', progress: 0, target: 1, unlocked: 0, xpReward: 1000, createdAt: Date.now() },

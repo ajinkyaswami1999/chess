@@ -129,8 +129,8 @@ export default function ChessGamePage() {
           activeTab === 'game' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}>
           <Canvas
-            shadows
-            gl={{ 
+            shadows="percentage"
+            gl={{
               antialias: true, 
               powerPreference: 'high-performance',
               alpha: false 
@@ -239,35 +239,37 @@ export default function ChessGamePage() {
         )}
 
         {/* 2D Dashboard Tabs panels */}
-        <div className="relative flex-1 z-10 w-full h-full overflow-hidden">
-          <AnimatePresence mode="wait">
-            {activeTab === 'dashboard' && (
-              <motion.div key="dashboard" className="w-full h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <DashboardTab />
-              </motion.div>
-            )}
-            {activeTab === 'stats' && (
-              <motion.div key="stats" className="w-full h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <AnalyticsTab />
-              </motion.div>
-            )}
-            {activeTab === 'history' && (
-              <motion.div key="history" className="w-full h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <MatchHistoryTab />
-              </motion.div>
-            )}
-            {activeTab === 'achievements' && (
-              <motion.div key="achievements" className="w-full h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <AchievementsTab />
-              </motion.div>
-            )}
-            {activeTab === 'settings' && (
-              <motion.div key="settings" className="w-full h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <SettingsTab />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+        {activeTab !== 'game' && (
+          <div className="relative flex-1 z-10 w-full h-full overflow-hidden">
+            <AnimatePresence mode="wait">
+              {activeTab === 'dashboard' && (
+                <motion.div key="dashboard" className="w-full h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <DashboardTab />
+                </motion.div>
+              )}
+              {activeTab === 'stats' && (
+                <motion.div key="stats" className="w-full h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <AnalyticsTab />
+                </motion.div>
+              )}
+              {activeTab === 'history' && (
+                <motion.div key="history" className="w-full h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <MatchHistoryTab />
+                </motion.div>
+              )}
+              {activeTab === 'achievements' && (
+                <motion.div key="achievements" className="w-full h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <AchievementsTab />
+                </motion.div>
+              )}
+              {activeTab === 'settings' && (
+                <motion.div key="settings" className="w-full h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <SettingsTab />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
 
       </div>
 

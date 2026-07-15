@@ -305,6 +305,7 @@ export const ChessBoard3D: React.FC = () => {
             isLegalMoveTarget={isLegalTarget}
             isInCheck={isInCheck}
             reducedMotion={reducedMotion}
+            onClick={() => selectSquare(piece.square)}
           />
         );
       })}

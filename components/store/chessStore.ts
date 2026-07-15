@@ -870,8 +870,7 @@ export const useChessStore = create<ChessStore>((set, get) => ({
 
   resetGame: () => {
     const freshChess = new Chess();
-    const playerCol = get().settings.playerColor;
-    
+
     set({
       chessInstance: freshChess,
       fen: freshChess.fen(),
@@ -900,11 +899,6 @@ export const useChessStore = create<ChessStore>((set, get) => ({
         isActive: true,
       }
     });
-
-    // If player is black, CPU plays first move immediately
-    if (playerCol === 'b') {
-      set({ isCpuThinking: true });
-    }
   },
 
   setDifficulty: (level) => {
@@ -926,7 +920,9 @@ export const useChessStore = create<ChessStore>((set, get) => ({
         fen: freshChess.fen(),
         history: [],
         pieces: generateInitialPieces(),
-        status: 'playing',
+        // Preserve current status: keep showing the welcome screen (idle) until
+        // "BEGIN CHAMPIONSHIP" is pressed; only restart in-place if already playing.
+        status: state.status,
         winner: null,
         drawReason: null,
         selectedSquare: null,
@@ -940,7 +936,10 @@ export const useChessStore = create<ChessStore>((set, get) => ({
           b: { p: 0, r: 0, n: 0, b: 0, q: 0 }
         },
         evalScore: 0.3,
-        isCpuThinking: color === 'b', // CPU moves first if player is black
+        // Do not preset this: the CPU-move effect only fires when isCpuThinking
+        // is false, so forcing it true here would permanently block the CPU's
+        // opening move whenever the player picks Black.
+        isCpuThinking: false,
         soundToPlay: 'start',
         timeControl: {
           initialMinutes: state.timeControl.initialMinutes,

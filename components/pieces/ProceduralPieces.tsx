@@ -10,6 +10,7 @@ interface PieceProps {
   isLegalMoveTarget: boolean;
   isInCheck: boolean;
   reducedMotion: boolean;
+  onClick?: () => void;
 }
 
 // Convert board square to 3D positions
@@ -60,7 +61,8 @@ export const ProceduralPieces: React.FC<PieceProps> = ({
   isSelected,
   isLegalMoveTarget,
   isInCheck,
-  reducedMotion
+  reducedMotion,
+  onClick
 }) => {
   const meshRef = useRef<THREE.Group>(null);
   
@@ -258,7 +260,16 @@ export const ProceduralPieces: React.FC<PieceProps> = ({
 
   // Render correct shapes
   return (
-    <group ref={meshRef} position={targetPos}>
+    <group 
+      ref={meshRef} 
+      position={targetPos}
+      onClick={(e) => {
+        if (onClick) {
+          e.stopPropagation();
+          onClick();
+        }
+      }}
+    >
       {/* 1. Pawn */}
       {type === 'p' && (
         <group>

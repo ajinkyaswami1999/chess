@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { useChessStore } from '../store/chessStore';
 
 interface PieceProps {
   type: string; // 'p' | 'r' | 'n' | 'b' | 'q' | 'k'
@@ -11,6 +12,64 @@ interface PieceProps {
   isInCheck: boolean;
   reducedMotion: boolean;
   onClick?: () => void;
+}
+
+// Per piece-set silhouette: overall proportions, lathe/ring faceting, and topper shapes —
+// so sets read as genuinely different sculpts, not just recolored Staunton pieces.
+type FinialShape = 'sphere' | 'icosahedron' | 'cone' | 'dodecahedron';
+type CrenellationShape = 'box' | 'cone' | 'cylinder' | 'dodecahedron' | 'icosahedron' | 'dome';
+
+interface ThemeShapeConfig {
+  scale: [number, number, number];
+  segments: number;
+  headShape: FinialShape;
+  crenellationShape: CrenellationShape;
+  bevelSegments: number;
+}
+
+const THEME_SHAPE: Record<string, ThemeShapeConfig> = {
+  staunton: { scale: [1, 1, 1], segments: 32, headShape: 'sphere', crenellationShape: 'box', bevelSegments: 3 },
+  gold: { scale: [1.05, 1.06, 1.05], segments: 32, headShape: 'sphere', crenellationShape: 'box', bevelSegments: 4 },
+  glass: { scale: [1, 1, 1], segments: 7, headShape: 'icosahedron', crenellationShape: 'icosahedron', bevelSegments: 1 },
+  dark_knight: { scale: [0.92, 1.16, 0.92], segments: 10, headShape: 'cone', crenellationShape: 'cone', bevelSegments: 1 },
+  jade: { scale: [1.18, 0.9, 1.18], segments: 32, headShape: 'sphere', crenellationShape: 'dome', bevelSegments: 4 },
+  rose_gold: { scale: [0.9, 1.14, 0.9], segments: 32, headShape: 'sphere', crenellationShape: 'box', bevelSegments: 4 },
+  steampunk: { scale: [1.12, 0.94, 1.12], segments: 16, headShape: 'sphere', crenellationShape: 'cylinder', bevelSegments: 2 },
+  ice: { scale: [1, 1.08, 1], segments: 6, headShape: 'icosahedron', crenellationShape: 'icosahedron', bevelSegments: 1 },
+  lava: { scale: [1.25, 0.85, 1.25], segments: 9, headShape: 'dodecahedron', crenellationShape: 'dodecahedron', bevelSegments: 1 },
+  wood_carved: { scale: [1.15, 0.93, 1.15], segments: 12, headShape: 'sphere', crenellationShape: 'dome', bevelSegments: 3 },
+};
+
+function FinialGeometry({ shape, size, segments }: { shape: FinialShape; size: number; segments: number }) {
+  switch (shape) {
+    case 'icosahedron':
+      return <icosahedronGeometry args={[size, 0]} />;
+    case 'cone':
+      return <coneGeometry args={[size * 0.9, size * 1.8, Math.max(4, Math.min(segments, 8))]} />;
+    case 'dodecahedron':
+      return <dodecahedronGeometry args={[size, 0]} />;
+    case 'sphere':
+    default:
+      return <sphereGeometry args={[size, Math.max(8, segments), Math.max(8, segments)]} />;
+  }
+}
+
+function CrenellationGeometry({ shape, size }: { shape: CrenellationShape; size: number }) {
+  switch (shape) {
+    case 'cone':
+      return <coneGeometry args={[size * 0.8, size * 1.5, 6]} />;
+    case 'cylinder':
+      return <cylinderGeometry args={[size * 0.55, size * 0.55, size * 1.3, 10]} />;
+    case 'dodecahedron':
+      return <dodecahedronGeometry args={[size * 0.8, 0]} />;
+    case 'icosahedron':
+      return <icosahedronGeometry args={[size * 0.8, 0]} />;
+    case 'dome':
+      return <sphereGeometry args={[size * 0.75, 12, 8]} />;
+    case 'box':
+    default:
+      return <boxGeometry args={[size, size * 0.85, size]} />;
+  }
 }
 
 // Convert board square to 3D positions
@@ -24,35 +83,6 @@ export function squareToVector3(square: string): THREE.Vector3 {
   const z = (7 - rank) - 3.5; // rank 8 is at top (z = -3.5)
   return new THREE.Vector3(x, 0, z);
 }
-
-// Procedural materials
-const goldMaterial = new THREE.MeshPhysicalMaterial({
-  color: '#e5c158',
-  metalness: 0.9,
-  roughness: 0.15,
-  clearcoat: 1.0,
-  clearcoatRoughness: 0.1
-});
-
-// White Ivory Marble Material
-const whiteMaterial = new THREE.MeshPhysicalMaterial({
-  color: '#f6f5f0',
-  roughness: 0.12,
-  metalness: 0.05,
-  clearcoat: 1.0,
-  clearcoatRoughness: 0.05,
-  reflectivity: 0.9
-});
-
-// Black Walnut Wood Material
-const blackMaterial = new THREE.MeshPhysicalMaterial({
-  color: '#2e1d11',
-  roughness: 0.28,
-  metalness: 0.0,
-  clearcoat: 0.6,
-  clearcoatRoughness: 0.2,
-  reflectivity: 0.4
-});
 
 export const ProceduralPieces: React.FC<PieceProps> = ({
   type,
@@ -75,6 +105,78 @@ export const ProceduralPieces: React.FC<PieceProps> = ({
   const moveProgress = useRef(0);
   const moveStartPos = useRef<THREE.Vector3>(targetPos.clone());
 
+  const pieceTheme = useChessStore((state) => state.settings.pieceTheme || 'staunton');
+  const shapeConfig = THEME_SHAPE[pieceTheme] || THEME_SHAPE.staunton;
+  const ringSegments = Math.max(8, shapeConfig.segments);
+
+  const materials = useMemo(() => {
+    const createMat = (params: THREE.MeshPhysicalMaterialParameters) => new THREE.MeshPhysicalMaterial(params);
+
+    switch (pieceTheme) {
+      case 'gold':
+        return {
+          white: createMat({ color: '#e2e8f0', metalness: 0.95, roughness: 0.1, clearcoat: 1.0, clearcoatRoughness: 0.05 }), // Platinum/Silver
+          black: createMat({ color: '#e5c158', metalness: 0.95, roughness: 0.1, clearcoat: 1.0, clearcoatRoughness: 0.05 }), // Gold
+          accent: createMat({ color: '#3f3f46', metalness: 0.9, roughness: 0.2, clearcoat: 0.5 }), // Dark chrome
+        };
+      case 'glass':
+        return {
+          white: createMat({ color: '#ffffff', transmission: 0.9, thickness: 0.8, roughness: 0.1, metalness: 0.1, clearcoat: 1.0, clearcoatRoughness: 0.05 }), // Frosted glass
+          black: createMat({ color: '#1f2937', transmission: 0.85, thickness: 0.8, roughness: 0.15, metalness: 0.1, clearcoat: 1.0, clearcoatRoughness: 0.05 }), // Smoked glass
+          accent: createMat({ color: '#e4e4e7', metalness: 0.95, roughness: 0.1, clearcoat: 1.0 }), // Chrome
+        };
+      case 'dark_knight':
+        return {
+          white: createMat({ color: '#e2e8f0', metalness: 0.9, roughness: 0.15, clearcoat: 0.8 }), // Polished steel
+          black: createMat({ color: '#111827', metalness: 0.8, roughness: 0.45, clearcoat: 0.1 }), // Matte black metal
+          accent: createMat({ color: '#e2e8f0', metalness: 0.95, roughness: 0.1 }), // Steel
+        };
+      case 'jade':
+        return {
+          white: createMat({ color: '#f5f5f0', roughness: 0.15, transmission: 0.25, thickness: 0.3, clearcoat: 0.8 }), // White jade
+          black: createMat({ color: '#047857', roughness: 0.12, transmission: 0.25, thickness: 0.3, clearcoat: 0.8 }), // Green jade
+          accent: createMat({ color: '#f59e0b', metalness: 0.85, roughness: 0.2, clearcoat: 0.5 }), // Gold
+        };
+      case 'rose_gold':
+        return {
+          white: createMat({ color: '#fda4af', metalness: 0.9, roughness: 0.15, clearcoat: 0.8 }), // Rose gold
+          black: createMat({ color: '#334155', metalness: 0.95, roughness: 0.1, clearcoat: 0.5 }), // Hematite steel
+          accent: createMat({ color: '#fda4af', metalness: 0.95, roughness: 0.15 }), // Rose gold
+        };
+      case 'steampunk':
+        return {
+          white: createMat({ color: '#ca8a04', metalness: 0.8, roughness: 0.3, clearcoat: 0.3 }), // Antique brass
+          black: createMat({ color: '#1e293b', metalness: 0.85, roughness: 0.4, clearcoat: 0.2 }), // Oiled iron
+          accent: createMat({ color: '#ea580c', metalness: 0.9, roughness: 0.2, clearcoat: 0.5 }), // Copper
+        };
+      case 'ice':
+        return {
+          white: createMat({ color: '#e0f2fe', transmission: 0.65, thickness: 0.4, roughness: 0.2, clearcoat: 1.0, clearcoatRoughness: 0.1 }), // Snow crystal
+          black: createMat({ color: '#0284c7', transmission: 0.75, thickness: 0.4, roughness: 0.1, clearcoat: 1.0, clearcoatRoughness: 0.05, emissive: '#0369a1', emissiveIntensity: 0.3 }), // Deep ice
+          accent: createMat({ color: '#38bdf8', metalness: 0.5, roughness: 0.1, emissive: '#0ea5e9', emissiveIntensity: 0.8 }), // Glowing cyan
+        };
+      case 'lava':
+        return {
+          white: createMat({ color: '#9ca3af', roughness: 0.7, metalness: 0.0 }), // Granite
+          black: createMat({ color: '#111827', roughness: 0.6, metalness: 0.1, emissive: '#ea580c', emissiveIntensity: 1.2 }), // Lava basalt
+          accent: createMat({ color: '#ef4444', roughness: 0.3, emissive: '#ef4444', emissiveIntensity: 1.5 }), // Lava
+        };
+      case 'wood_carved':
+        return {
+          white: createMat({ color: '#eab308', roughness: 0.45, clearcoat: 0.2 }), // Cherry/Maple
+          black: createMat({ color: '#451a03', roughness: 0.45, clearcoat: 0.2 }), // Walnut
+          accent: createMat({ color: '#b45309', roughness: 0.35, clearcoat: 0.3 }), // Mahogany
+        };
+      case 'staunton':
+      default:
+        return {
+          white: createMat({ color: '#fcfbfa', roughness: 0.12, metalness: 0.05, clearcoat: 1.0, clearcoatRoughness: 0.05, reflectivity: 0.9 }), // Ivory white
+          black: createMat({ color: '#1a100a', roughness: 0.28, metalness: 0.0, clearcoat: 0.6, clearcoatRoughness: 0.2, reflectivity: 0.4 }), // Ebony
+          accent: createMat({ color: '#d4af37', metalness: 0.9, roughness: 0.15, clearcoat: 1.0 }), // Brass
+        };
+    }
+  }, [pieceTheme]);
+
   // Detect when square changes to trigger a lift-and-move Bezier arc
   useEffect(() => {
     if (!currentPos.current.equals(targetPos)) {
@@ -85,7 +187,8 @@ export const ProceduralPieces: React.FC<PieceProps> = ({
   }, [targetPos]);
 
   // Material choice
-  const activeMaterial = color === 'w' ? whiteMaterial : blackMaterial;
+  const activeMaterial = color === 'w' ? materials.white : materials.black;
+  const goldMaterial = materials.accent;
 
   // Generate curves once for each piece type
   const geometries = useMemo(() => {
@@ -185,7 +288,7 @@ export const ProceduralPieces: React.FC<PieceProps> = ({
       bevelThickness: 0.04,
       bevelSize: 0.02,
       bevelOffset: 0,
-      bevelSegments: 3
+      bevelSegments: shapeConfig.bevelSegments
     };
 
     return {
@@ -197,7 +300,7 @@ export const ProceduralPieces: React.FC<PieceProps> = ({
       knightShape,
       extrudeSettings
     };
-  }, []);
+  }, [shapeConfig.bevelSegments]);
 
   // Frame loop for 3D animations: float, select, and movements
   useFrame((state, delta) => {
@@ -272,52 +375,52 @@ export const ProceduralPieces: React.FC<PieceProps> = ({
     >
       {/* 1. Pawn */}
       {type === 'p' && (
-        <group>
+        <group scale={shapeConfig.scale}>
           <mesh material={activeMaterial}>
-            <latheGeometry args={[geometries.pawnPoints, 32]} />
+            <latheGeometry args={[geometries.pawnPoints, shapeConfig.segments]} />
           </mesh>
           {/* Gold collar */}
           <mesh position={[0, 0.44, 0]} material={goldMaterial}>
-            <torusGeometry args={[0.15, 0.025, 8, 32]} />
+            <torusGeometry args={[0.15, 0.025, 8, ringSegments]} />
           </mesh>
-          {/* Head sphere */}
+          {/* Head */}
           <mesh position={[0, 0.8, 0]} material={activeMaterial}>
-            <sphereGeometry args={[0.22, 32, 32]} />
+            <FinialGeometry shape={shapeConfig.headShape} size={0.22} segments={shapeConfig.segments} />
           </mesh>
         </group>
       )}
 
       {/* 2. Bishop */}
       {type === 'b' && (
-        <group>
+        <group scale={shapeConfig.scale}>
           <mesh material={activeMaterial}>
-            <latheGeometry args={[geometries.bishopPoints, 32]} />
+            <latheGeometry args={[geometries.bishopPoints, shapeConfig.segments]} />
           </mesh>
           {/* Gold collar */}
           <mesh position={[0, 0.62, 0]} material={goldMaterial}>
-            <torusGeometry args={[0.16, 0.03, 8, 32]} />
+            <torusGeometry args={[0.16, 0.03, 8, ringSegments]} />
           </mesh>
-          {/* Head crown sphere */}
+          {/* Head crown */}
           <mesh position={[0, 1.20, 0]} material={activeMaterial}>
-            <sphereGeometry args={[0.16, 32, 32]} />
+            <FinialGeometry shape={shapeConfig.headShape} size={0.16} segments={shapeConfig.segments} />
           </mesh>
-          {/* Bishop finial tip (gold ball) */}
+          {/* Bishop finial tip (gold) */}
           <mesh position={[0, 1.4, 0]} material={goldMaterial}>
-            <sphereGeometry args={[0.05, 16, 16]} />
+            <FinialGeometry shape={shapeConfig.headShape} size={0.05} segments={shapeConfig.segments} />
           </mesh>
         </group>
       )}
 
       {/* 3. Knight */}
       {type === 'n' && (
-        <group>
+        <group scale={shapeConfig.scale}>
           {/* Circular base */}
           <mesh material={activeMaterial}>
-            <cylinderGeometry args={[0.34, 0.36, 0.16, 32]} />
+            <cylinderGeometry args={[0.34, 0.36, 0.16, shapeConfig.segments]} />
           </mesh>
           {/* Gold base ring */}
           <mesh position={[0, 0.08, 0]} material={goldMaterial}>
-            <torusGeometry args={[0.32, 0.03, 8, 32]} />
+            <torusGeometry args={[0.32, 0.03, 8, ringSegments]} />
           </mesh>
           {/* Extruded Horse Head */}
           <mesh 
@@ -332,26 +435,26 @@ export const ProceduralPieces: React.FC<PieceProps> = ({
 
       {/* 4. Rook */}
       {type === 'r' && (
-        <group>
+        <group scale={shapeConfig.scale}>
           <mesh material={activeMaterial}>
-            <latheGeometry args={[geometries.rookPoints, 32]} />
+            <latheGeometry args={[geometries.rookPoints, shapeConfig.segments]} />
           </mesh>
           {/* Gold collar */}
           <mesh position={[0, 0.74, 0]} material={goldMaterial}>
-            <torusGeometry args={[0.26, 0.03, 8, 32]} />
+            <torusGeometry args={[0.26, 0.03, 8, ringSegments]} />
           </mesh>
           {/* Castle top crenellations */}
           <group position={[0, 1.04, 0]}>
             {[0, 1, 2, 3].map((i) => {
               const angle = (i * Math.PI) / 2;
               return (
-                <mesh 
-                  key={i} 
-                  position={[Math.cos(angle) * 0.24, 0, Math.sin(angle) * 0.24]} 
+                <mesh
+                  key={i}
+                  position={[Math.cos(angle) * 0.24, 0, Math.sin(angle) * 0.24]}
                   rotation={[0, -angle, 0]}
                   material={activeMaterial}
                 >
-                  <boxGeometry args={[0.12, 0.1, 0.12]} />
+                  <CrenellationGeometry shape={shapeConfig.crenellationShape} size={0.12} />
                 </mesh>
               );
             })}
@@ -361,49 +464,49 @@ export const ProceduralPieces: React.FC<PieceProps> = ({
 
       {/* 5. Queen */}
       {type === 'q' && (
-        <group>
+        <group scale={shapeConfig.scale}>
           <mesh material={activeMaterial}>
-            <latheGeometry args={[geometries.queenPoints, 32]} />
+            <latheGeometry args={[geometries.queenPoints, shapeConfig.segments]} />
           </mesh>
           {/* Gold collar */}
           <mesh position={[0, 0.84, 0]} material={goldMaterial}>
-            <torusGeometry args={[0.2, 0.035, 8, 32]} />
+            <torusGeometry args={[0.2, 0.035, 8, ringSegments]} />
           </mesh>
-          {/* Coronet pearls (Gold tiny spheres surrounding the crown) */}
+          {/* Coronet pearls (tiny gems surrounding the crown) */}
           <group position={[0, 1.34, 0]}>
             {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => {
               const angle = (i * Math.PI) / 4;
               return (
-                <mesh 
-                  key={i} 
-                  position={[Math.cos(angle) * 0.28, 0.02, Math.sin(angle) * 0.28]} 
+                <mesh
+                  key={i}
+                  position={[Math.cos(angle) * 0.28, 0.02, Math.sin(angle) * 0.28]}
                   material={goldMaterial}
                 >
-                  <sphereGeometry args={[0.04, 12, 12]} />
+                  <FinialGeometry shape={shapeConfig.headShape} size={0.04} segments={shapeConfig.segments} />
                 </mesh>
               );
             })}
           </group>
           {/* Tiny center crown pearl */}
           <mesh position={[0, 1.44, 0]} material={goldMaterial}>
-            <sphereGeometry args={[0.06, 16, 16]} />
+            <FinialGeometry shape={shapeConfig.headShape} size={0.06} segments={shapeConfig.segments} />
           </mesh>
         </group>
       )}
 
       {/* 6. King */}
       {type === 'k' && (
-        <group>
+        <group scale={shapeConfig.scale}>
           <mesh material={activeMaterial}>
-            <latheGeometry args={[geometries.kingPoints, 32]} />
+            <latheGeometry args={[geometries.kingPoints, shapeConfig.segments]} />
           </mesh>
           {/* Gold collar */}
           <mesh position={[0, 0.94, 0]} material={goldMaterial}>
-            <torusGeometry args={[0.22, 0.035, 8, 32]} />
+            <torusGeometry args={[0.22, 0.035, 8, ringSegments]} />
           </mesh>
           {/* Crown band */}
           <mesh position={[0, 1.38, 0]} material={goldMaterial}>
-            <torusGeometry args={[0.24, 0.025, 8, 32]} />
+            <torusGeometry args={[0.24, 0.025, 8, ringSegments]} />
           </mesh>
           {/* King Cross Finial */}
           <group position={[0, 1.62, 0]}>

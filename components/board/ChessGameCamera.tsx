@@ -12,15 +12,35 @@ export const ChessGameCamera: React.FC = () => {
   const checkingSquares = useChessStore((state) => state.checkingSquares);
   const mateSquare = useChessStore((state) => state.mateSquare);
   const reducedMotion = useChessStore((state) => state.settings.reducedMotion);
+  const cameraPreset = useChessStore((state) => state.settings.cameraPreset || 'classic');
 
   // We use refs to control OrbitControls target and camera positions programmatically
   const controlsRef = useRef<any>(null);
 
   // Ideal target angles & positions
-  // White side: x = 0, y = 6.2, z = 6.8 (approx 45 degrees, centered)
-  // Black side: x = 0, y = 6.2, z = -6.8 (flipped)
-  const defaultPos = useMemo(() => new THREE.Vector3(0, 6.2, 6.8), []);
-  const flippedPos = useMemo(() => new THREE.Vector3(0, 6.2, -6.8), []);
+  const defaultPos = useMemo(() => {
+    switch (cameraPreset) {
+      case 'topdown':
+        return new THREE.Vector3(0, 8.8, 0.001);
+      case 'immersive':
+        return new THREE.Vector3(0, 3.2, 5.8);
+      case 'classic':
+      default:
+        return new THREE.Vector3(0, 6.2, 6.8);
+    }
+  }, [cameraPreset]);
+
+  const flippedPos = useMemo(() => {
+    switch (cameraPreset) {
+      case 'topdown':
+        return new THREE.Vector3(0, 8.8, -0.001);
+      case 'immersive':
+        return new THREE.Vector3(0, 3.2, -5.8);
+      case 'classic':
+      default:
+        return new THREE.Vector3(0, 6.2, -6.8);
+    }
+  }, [cameraPreset]);
   
   const targetCamPos = useRef<THREE.Vector3>(defaultPos.clone());
   const targetLookAt = useRef<THREE.Vector3>(new THREE.Vector3(0, 0, 0));
@@ -90,7 +110,7 @@ export const ChessGameCamera: React.FC = () => {
       minDistance={3.0}
       maxDistance={11.0}
       // Orbit limits (prevent going beneath the table or looking straight down)
-      minPolarAngle={Math.PI / 6} // ~30 degrees
+      minPolarAngle={cameraPreset === 'topdown' ? 0 : Math.PI / 6} // ~30 degrees or straight top-down
       maxPolarAngle={Math.PI / 2.15} // ~83 degrees (just above horizontal)
       enablePan={false} // lock camera focus center to board coordinates
     />

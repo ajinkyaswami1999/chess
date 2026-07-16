@@ -148,7 +148,7 @@ export const DashboardTab: React.FC = () => {
           
           <div className="text-center md:text-left space-y-2">
             <div className="flex items-center flex-col md:flex-row gap-2 md:gap-3">
-              <h1 className="text-3xl font-bold tracking-tight text-white">{playerProfile.username}</h1>
+              <h2 className="text-3xl font-bold tracking-tight text-white">{playerProfile.username}</h2>
               <span className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full bg-[#d4af37]/10 text-[#e2c15a] border border-[#d4af37]/20 backdrop-blur-sm">
                 Level {playerProfile.level}
               </span>

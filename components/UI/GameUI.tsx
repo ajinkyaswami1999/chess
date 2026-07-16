@@ -34,7 +34,7 @@ export const GameUI: React.FC = () => {
   const {
     selectSquare, makeMove, undoMove, resetGame, setDifficulty, setPlayerColor,
     setVolume, toggleAmbient, flipBoard, toggleReducedMotion, toggleHighContrast,
-    toggleCoordinates, setPromotionPending, suggestHint, updateTimers, makeCpuMove
+    toggleCoordinates, setCameraPreset, setBoardTheme, setPieceTheme, setPromotionPending, suggestHint, updateTimers, makeCpuMove
   } = useChessStore();
 
   const [showSettings, setShowSettings] = useState(false);
@@ -137,7 +137,7 @@ export const GameUI: React.FC = () => {
             C
           </div>
           <div>
-            <h1 className="font-serif font-semibold text-sm leading-tight tracking-wider text-white">CHESS GRAND</h1>
+            <span className="font-serif font-semibold text-sm leading-tight tracking-wider text-white block">CHESS GRAND</span>
             <p className="text-[10px] text-white/50 tracking-widest font-mono">VS CPU Lvl {settings.level}</p>
           </div>
         </div>
@@ -293,6 +293,22 @@ export const GameUI: React.FC = () => {
             <span className="text-[9px] font-mono tracking-widest">FLIP</span>
           </button>
 
+          {/* View Preset Cycle Action */}
+          <button
+            onClick={() => {
+              const presets: ('classic' | 'topdown' | 'immersive')[] = ['classic', 'topdown', 'immersive'];
+              const nextIdx = (presets.indexOf(settings.cameraPreset || 'classic') + 1) % presets.length;
+              setCameraPreset(presets[nextIdx]);
+            }}
+            title="Cycle view angle"
+            className="flex flex-col items-center gap-1 text-white/60 hover:text-white transition-all active:scale-95 cursor-pointer"
+          >
+            <Eye size={20} />
+            <span className="text-[9px] font-mono tracking-widest uppercase">
+              {settings.cameraPreset === 'topdown' ? '2D VIEW' : settings.cameraPreset === 'immersive' ? '3D LOW' : '3D VIEW'}
+            </span>
+          </button>
+
           {/* Quick Restart Action */}
           <button
             onClick={resetGame}
@@ -443,6 +459,66 @@ export const GameUI: React.FC = () => {
                         BLACK
                       </button>
                     </div>
+                  </div>
+
+                  {/* Camera Preset Choice */}
+                  <div className="flex justify-between items-center text-xs font-mono text-white/80">
+                    <span>Camera Angle</span>
+                    <div className="flex bg-black/40 p-0.5 rounded-lg border border-white/5">
+                      {(['classic', 'topdown', 'immersive'] as const).map((preset) => (
+                        <button
+                          key={preset}
+                          onClick={() => setCameraPreset(preset)}
+                          className={`px-2.5 py-1 rounded text-[10px] font-mono font-bold transition-all uppercase ${
+                            settings.cameraPreset === preset ? 'bg-white text-black font-semibold' : 'text-white/60 hover:text-white'
+                          }`}
+                        >
+                          {preset === 'classic' ? '3D' : preset === 'topdown' ? '2D' : 'Low'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Board Theme Choice */}
+                  <div className="flex justify-between items-center text-xs font-mono text-white/80">
+                    <span>Board Theme</span>
+                    <select
+                      value={settings.boardTheme || 'marble'}
+                      onChange={(e) => setBoardTheme(e.target.value)}
+                      className="px-2.5 py-1 rounded bg-[#1c120c] border border-white/10 text-xs text-white/80 focus:border-[#d4af37] outline-none"
+                    >
+                      <option value="wood">Classic Wood</option>
+                      <option value="marble">Marble Luxury</option>
+                      <option value="ice">Ice Kingdom</option>
+                      <option value="volcanic">Volcanic Realm</option>
+                      <option value="forest">Forest Sanctuary</option>
+                      <option value="space">Space Odyssey</option>
+                      <option value="steampunk">Steampunk Empire</option>
+                      <option value="desert">Desert Oasis</option>
+                      <option value="gothic">Gothic Castle</option>
+                      <option value="neon">Neon Cyberpunk</option>
+                    </select>
+                  </div>
+
+                  {/* Piece Material Choice */}
+                  <div className="flex justify-between items-center text-xs font-mono text-white/80">
+                    <span>Piece Material</span>
+                    <select
+                      value={settings.pieceTheme || 'staunton'}
+                      onChange={(e) => setPieceTheme(e.target.value)}
+                      className="px-2.5 py-1 rounded bg-[#1c120c] border border-white/10 text-xs text-white/80 focus:border-[#d4af37] outline-none"
+                    >
+                      <option value="staunton">Classic Staunton</option>
+                      <option value="gold">Luxury Gold</option>
+                      <option value="glass">Crystal Glass</option>
+                      <option value="dark_knight">Dark Knight</option>
+                      <option value="jade">Jade Royal</option>
+                      <option value="rose_gold">Rose Gold</option>
+                      <option value="steampunk">Steampunk</option>
+                      <option value="ice">Ice Crystal</option>
+                      <option value="lava">Lava Stone</option>
+                      <option value="wood_carved">Wooden Carved</option>
+                    </select>
                   </div>
 
                   {/* Show coordinates */}

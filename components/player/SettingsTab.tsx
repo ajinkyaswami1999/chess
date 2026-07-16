@@ -312,11 +312,83 @@ export const SettingsTab: React.FC = () => {
                 className="w-4.5 h-4.5 rounded border-white/10 bg-white/5 text-[#d4af37] focus:ring-0"
               />
             </div>
+
+            <div className="flex items-center justify-between p-2 rounded-xl bg-white/5 border border-white/5">
+              <div>
+                <p className="font-semibold text-xs">Default Camera Angle</p>
+                <p className="text-[10px] text-gray-400">Set default perspective for gameplay</p>
+              </div>
+              <select
+                value={settings.cameraPreset || 'classic'}
+                onChange={(e) => updateSettings({ cameraPreset: e.target.value })}
+                className="px-2 py-1 rounded bg-[#1c120c] border border-white/10 text-xs text-white/80 focus:border-[#d4af37] outline-none"
+              >
+                <option value="classic">Classic 3D</option>
+                <option value="topdown">Top-Down 2D</option>
+                <option value="immersive">Immersive Low</option>
+              </select>
+            </div>
           </div>
         </div>
       </motion.div>
 
-      {/* 3. Local database exports & Backups */}
+      {/* 3. Visual Themes & Customizations */}
+      <motion.div 
+        className="rounded-2xl border border-white/[0.06] bg-gradient-to-b from-white/[0.03] to-transparent p-6 space-y-6 shadow-xl hover:border-white/[0.1] transition-all"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+      >
+        <h3 className="text-base font-bold flex items-center gap-2">
+          <Sliders className="w-4 h-4 text-[#d4af37]" /> Visual Themes & Customizations
+        </h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+          {/* Board Theme */}
+          <div className="space-y-2">
+            <label className="text-xs text-gray-400 font-semibold block">3D Chessboard Theme</label>
+            <select
+              value={settings.boardTheme || 'marble'}
+              onChange={(e) => updateSettings({ boardTheme: e.target.value })}
+              className="w-full px-3 py-2 rounded-xl bg-[#1c120c] border border-white/10 outline-none focus:border-[#d4af37]/30 text-white text-xs"
+            >
+              <option value="wood">Classic Wood</option>
+              <option value="marble">Marble Luxury</option>
+              <option value="ice">Ice Kingdom</option>
+              <option value="volcanic">Volcanic Realm</option>
+              <option value="forest">Forest Sanctuary</option>
+              <option value="space">Space Odyssey</option>
+              <option value="steampunk">Steampunk Empire</option>
+              <option value="desert">Desert Oasis</option>
+              <option value="gothic">Gothic Castle</option>
+              <option value="neon">Neon Cyberpunk</option>
+            </select>
+          </div>
+
+          {/* Piece Theme */}
+          <div className="space-y-2">
+            <label className="text-xs text-gray-400 font-semibold block">3D Chess Pieces Material</label>
+            <select
+              value={settings.pieceTheme || 'staunton'}
+              onChange={(e) => updateSettings({ pieceTheme: e.target.value })}
+              className="w-full px-3 py-2 rounded-xl bg-[#1c120c] border border-white/10 outline-none focus:border-[#d4af37]/30 text-white text-xs"
+            >
+              <option value="staunton">Classic Staunton</option>
+              <option value="gold">Luxury Gold</option>
+              <option value="glass">Crystal Glass</option>
+              <option value="dark_knight">Dark Knight</option>
+              <option value="jade">Jade Royal</option>
+              <option value="rose_gold">Rose Gold</option>
+              <option value="steampunk">Steampunk</option>
+              <option value="ice">Ice Crystal</option>
+              <option value="lava">Lava Stone</option>
+              <option value="wood_carved">Wooden Carved</option>
+            </select>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* 4. Local database exports & Backups */}
       <motion.div 
         className="rounded-2xl border border-white/[0.06] bg-gradient-to-b from-white/[0.03] to-transparent p-6 space-y-6 shadow-xl hover:border-white/[0.1] transition-all"
         initial={{ opacity: 0, y: 10 }}

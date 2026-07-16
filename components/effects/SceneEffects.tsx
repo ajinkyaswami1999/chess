@@ -9,9 +9,116 @@ export const SceneEffects: React.FC = () => {
   const checkingSquares = useChessStore((state) => state.checkingSquares);
   const isCpuThinking = useChessStore((state) => state.isCpuThinking);
   const status = useChessStore((state) => state.status);
+  const boardTheme = useChessStore((state) => state.settings.boardTheme || 'marble');
   
   const selectLightRef = useRef<THREE.PointLight>(null);
   const checkLightRef = useRef<THREE.PointLight>(null);
+
+  const sceneStyle = React.useMemo(() => {
+    switch (boardTheme) {
+      case 'wood':
+        return {
+          background: '#140c08',
+          cornerLight: '#d4af37',
+          backLight: '#e5c158',
+          skyColor: '#ffedd5',
+          groundColor: '#2c1c0f',
+          fogNear: 9,
+          fogFar: 30,
+        };
+      case 'ice':
+        return {
+          background: '#080e1a',
+          cornerLight: '#38bdf8',
+          backLight: '#7dd3fc',
+          skyColor: '#e0f2fe',
+          groundColor: '#0c1a30',
+          fogNear: 11,
+          fogFar: 34,
+        };
+      case 'volcanic':
+        return {
+          background: '#090300',
+          cornerLight: '#f97316',
+          backLight: '#ef4444',
+          skyColor: '#fecdd3',
+          groundColor: '#1c0500',
+          fogNear: 7,
+          fogFar: 34,
+        };
+      case 'forest':
+        return {
+          background: '#050c05',
+          cornerLight: '#34d399',
+          backLight: '#10b981',
+          skyColor: '#d1fae5',
+          groundColor: '#051805',
+          fogNear: 9,
+          fogFar: 32,
+        };
+      case 'space':
+        return {
+          background: '#020208',
+          cornerLight: '#06b6d4',
+          backLight: '#8b5cf6',
+          skyColor: '#c084fc',
+          groundColor: '#050518',
+          fogNear: 13,
+          fogFar: 42,
+        };
+      case 'steampunk':
+        return {
+          background: '#0f0d0a',
+          cornerLight: '#f97316',
+          backLight: '#b45309',
+          skyColor: '#fed7aa',
+          groundColor: '#18120a',
+          fogNear: 6,
+          fogFar: 28,
+        };
+      case 'desert':
+        return {
+          background: '#1a130c',
+          cornerLight: '#eab308',
+          backLight: '#f59e0b',
+          skyColor: '#fef9c3',
+          groundColor: '#241a10',
+          fogNear: 8,
+          fogFar: 34,
+        };
+      case 'gothic':
+        return {
+          background: '#0d0f12',
+          cornerLight: '#9ca3af',
+          backLight: '#4b5563',
+          skyColor: '#e5e7eb',
+          groundColor: '#111317',
+          fogNear: 9,
+          fogFar: 36,
+        };
+      case 'neon':
+        return {
+          background: '#05000a',
+          cornerLight: '#ec4899',
+          backLight: '#a855f7',
+          skyColor: '#fdf4ff',
+          groundColor: '#0f021c',
+          fogNear: 10,
+          fogFar: 34,
+        };
+      case 'marble':
+      default:
+        return {
+          background: '#0e0906',
+          cornerLight: '#d4af37',
+          backLight: '#e5c158',
+          skyColor: '#ffffff',
+          groundColor: '#2c1c0f',
+          fogNear: 10,
+          fogFar: 32,
+        };
+    }
+  }, [boardTheme]);
 
   // Position of selected square light
   const selectLightPos = React.useMemo(() => {
@@ -53,7 +160,7 @@ export const SceneEffects: React.FC = () => {
 
       {/* 2. Hemisphere Light (Simulates sky/ground ambient gradients) */}
       <hemisphereLight 
-        args={['#ffffff', '#2c1c0f', 0.4]} 
+        args={[sceneStyle.skyColor, sceneStyle.groundColor, 0.4]} 
         position={[0, 20, 0]} 
       />
 
@@ -76,20 +183,20 @@ export const SceneEffects: React.FC = () => {
       <directionalLight
         position={[-6, 8, -6]}
         intensity={0.65}
-        color="#e5c158"
+        color={sceneStyle.backLight}
       />
 
       {/* 5. Soft Gold Ambient Point Lights at Board Corners */}
       <pointLight 
         position={[4.5, 0.8, 4.5]} 
         intensity={0.35} 
-        color="#d4af37" 
+        color={sceneStyle.cornerLight} 
         distance={6} 
       />
       <pointLight 
         position={[-4.5, 0.8, -4.5]} 
         intensity={0.35} 
-        color="#d4af37" 
+        color={sceneStyle.cornerLight} 
         distance={6} 
       />
 
@@ -129,8 +236,8 @@ export const SceneEffects: React.FC = () => {
       )}
 
       {/* 9. Background Room Fog (Draws focus to the board) */}
-      <color attach="background" args={['#0e0906']} />
-      <fog attach="fog" args={['#0e0906', 7, 20]} />
+      <color attach="background" args={[sceneStyle.background]} />
+      <fog attach="fog" args={[sceneStyle.background, sceneStyle.fogNear, sceneStyle.fogFar]} />
     </>
   );
 };

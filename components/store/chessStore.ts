@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { Chess } from 'chess.js';
-import { ChessState, PlayerColor, CpuLevel, GameStatus, DrawReason, MoveRecord, CapturedPieces, PieceItem } from '../types/chess';
+import { ChessState, PlayerColor, CpuLevel, GameStatus, DrawReason, MoveRecord, CapturedPieces, PieceItem, CameraPreset } from '../types/chess';
 import { db } from '../utils/db';
 
 // Helper to calculate captured pieces
@@ -509,6 +509,9 @@ interface ChessStoreActions {
   toggleReducedMotion: () => void;
   toggleHighContrast: () => void;
   toggleCoordinates: () => void;
+  setCameraPreset: (preset: CameraPreset) => void;
+  setBoardTheme: (theme: string) => void;
+  setPieceTheme: (theme: string) => void;
   triggerSound: (sound: 'move' | 'capture' | 'check' | 'castle' | 'promotion' | 'start' | 'victory' | 'defeat' | null) => void;
   updateTimers: () => void;
   setPromotionPending: (pending: { from: string; to: string } | null) => void;
@@ -558,6 +561,9 @@ export const useChessStore = create<ChessStore>((set, get) => ({
     showCoordinates: true,
     isFlipped: false,
     autoRotate: false,
+    cameraPreset: 'classic',
+    boardTheme: 'marble',
+    pieceTheme: 'staunton',
   },
 
   // Timers
@@ -899,6 +905,26 @@ export const useChessStore = create<ChessStore>((set, get) => ({
         isActive: true,
       }
     });
+
+    // Async settings sync
+    import('./playerStore').then(({ usePlayerStore }) => {
+      const playerSettings = usePlayerStore.getState().settings;
+      if (playerSettings) {
+        set((state) => ({
+          settings: {
+            ...state.settings,
+            reducedMotion: playerSettings.reducedMotion,
+            showCoordinates: playerSettings.showCoordinates,
+            highContrast: playerSettings.highContrast,
+            soundVolume: playerSettings.soundVolume,
+            ambientVolume: playerSettings.ambientVolume,
+            cameraPreset: (playerSettings.cameraPreset as any) || 'classic',
+            boardTheme: playerSettings.boardTheme || 'marble',
+            pieceTheme: playerSettings.pieceTheme || 'staunton',
+          }
+        }));
+      }
+    }).catch(err => console.warn('Could not sync player settings on reset:', err));
   },
 
   setDifficulty: (level) => {
@@ -996,6 +1022,33 @@ export const useChessStore = create<ChessStore>((set, get) => ({
     set((state) => ({
       settings: { ...state.settings, showCoordinates: !state.settings.showCoordinates }
     }));
+  },
+
+  setCameraPreset: (preset) => {
+    set((state) => ({
+      settings: { ...state.settings, cameraPreset: preset }
+    }));
+    import('./playerStore').then(({ usePlayerStore }) => {
+      usePlayerStore.getState().updateSettings({ cameraPreset: preset });
+    }).catch(err => console.error('Failed to sync camera preset with player settings:', err));
+  },
+
+  setBoardTheme: (theme) => {
+    set((state) => ({
+      settings: { ...state.settings, boardTheme: theme }
+    }));
+    import('./playerStore').then(({ usePlayerStore }) => {
+      usePlayerStore.getState().updateSettings({ boardTheme: theme });
+    }).catch(err => console.error('Failed to sync board theme with player settings:', err));
+  },
+
+  setPieceTheme: (theme) => {
+    set((state) => ({
+      settings: { ...state.settings, pieceTheme: theme }
+    }));
+    import('./playerStore').then(({ usePlayerStore }) => {
+      usePlayerStore.getState().updateSettings({ pieceTheme: theme });
+    }).catch(err => console.error('Failed to sync piece theme with player settings:', err));
   },
 
   setPromotionPending: (pending) => set({ promotionPending: pending }),

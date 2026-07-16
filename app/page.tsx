@@ -10,6 +10,8 @@ import { useAudio } from '../components/hooks/useAudio';
 import ChessBoard3D from '../components/board/ChessBoard3D';
 import ChessGameCamera from '../components/board/ChessGameCamera';
 import SceneEffects from '../components/effects/SceneEffects';
+import ThemeEnvironment from '../components/environment/ThemeEnvironment';
+import ThemeAtmosphere from '../components/effects/ThemeAtmosphere';
 import ParticleSystem from '../components/animations/ParticleSystem';
 import GameUI from '../components/UI/GameUI';
 import { CpuLevel } from '../components/types/chess';
@@ -65,7 +67,7 @@ export default function ChessGamePage() {
               C
             </div>
             <div className="hidden md:block">
-              <h1 className="font-serif text-sm font-bold tracking-widest text-white">CHESS GRAND</h1>
+              <span className="font-serif text-sm font-bold tracking-widest text-white block">CHESS GRAND</span>
               <span className="text-[7px] font-mono text-[#d4af37] tracking-[0.2em] block uppercase">Premium Offline</span>
             </div>
           </div>
@@ -139,8 +141,10 @@ export default function ChessGamePage() {
           >
             <Suspense fallback={null}>
               <SceneEffects />
+              <ThemeEnvironment />
               <ChessBoard3D />
               <ParticleSystem />
+              <ThemeAtmosphere />
               <ChessGameCamera />
             </Suspense>
           </Canvas>

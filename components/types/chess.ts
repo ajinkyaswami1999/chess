@@ -35,6 +35,8 @@ export interface CapturedPieces {
   };
 }
 
+export type CameraPreset = 'classic' | 'topdown' | 'immersive';
+
 export interface GameSettings {
   level: CpuLevel;
   playerColor: PlayerColor; // 'w' or 'b' for user, opponent is opposite
@@ -46,6 +48,9 @@ export interface GameSettings {
   showCoordinates: boolean;
   isFlipped: boolean; // board rotated 180 degrees
   autoRotate: boolean; // rotate board based on turn
+  cameraPreset: CameraPreset;
+  boardTheme: string;
+  pieceTheme: string;
 }
 
 export interface TimeControl {
